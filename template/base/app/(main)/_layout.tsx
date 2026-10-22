@@ -20,18 +20,24 @@ import { connectNotifications } from '@/features/notifications/notification-stor
  */
 
 /**
- * Tab 图标区
+ * Tab 图标
  *
- * 用固定高度容器包裹，避免图标字形把 tabBar 撑得不均匀；
- * 文字标签交给 tabBarLabel（由导航本身渲染），不要塞进 icon 里。
+ * 注意：不要再套一层带固定高度的 View。
+ * react-navigation 的 TabBarIcon 内部已经给了图标固定高度（ICON_SIZE_TALL），
+ * 外面再加 h-6 会让图标区超出 tabBar 的布局预算，把下方的文字标签挤掉
+ * —— 这就是之前「只有图标、没有文字」的原因。
  */
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   return (
-    <View className="h-6 items-center justify-center">
-      <Text className={focused ? 'text-lg text-primary' : 'text-lg text-text-secondary'}>
-        {label}
-      </Text>
-    </View>
+    <Text
+      style={{
+        fontSize: 20,
+        lineHeight: 24,
+        color: focused ? '#4f7cff' : '#8a9099',
+      }}
+    >
+      {label}
+    </Text>
   );
 }
 
@@ -45,12 +51,11 @@ export default function MainLayout() {
   const insets = useSafeAreaInsets();
 
   /*
-   * TabBar 尺寸约定（文字消失问题的修复）：
-   * 之前把 height 写死成 56 + insets.bottom，但图标区 24px + 文字 14px
-   * + padding 已超出内容高度，中文标签被挤出可视区只剩图标。
+   * TabBar 尺寸：按内容反推，别拍脑袋写死。
    *
-   * 现在改为按内容算：图标 24 + 间距 2 + 文字 16 + 上下 padding 10 ≈ 52，
-   * 再叠加底部安全区。并且显式开启 tabBarShowLabel，确保标签一定渲染。
+   * 组成：图标 24 + 文字 16 + 上下内边距 8 + 底部安全区
+   * 参考：react-navigation 默认是 49 + inset，中文标签需要更多空间，
+   * 这里给到 60 + inset，确保「首页 / 设备 / 我的」完整可见。
    */
   return (
     <Tabs
@@ -60,20 +65,18 @@ export default function MainLayout() {
         tabBarInactiveTintColor: '#8a9099',
         tabBarShowLabel: true,
         tabBarStyle: {
-          height: 52 + insets.bottom,
-          paddingTop: 5,
-          paddingBottom: insets.bottom + 5,
+          height: 60 + insets.bottom,
+          paddingTop: 6,
+          paddingBottom: insets.bottom + 6,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 12,
           lineHeight: 16,
-          marginTop: 1,
+          marginTop: 2,
+          marginBottom: 0,
         },
         tabBarIconStyle: {
-          marginTop: 0,
-        },
-        tabBarItemStyle: {
-          paddingVertical: 0,
+          marginBottom: 0,
         },
       }}
     >
