@@ -3,7 +3,7 @@
  *
  * 守住一个曾经导致「启动白屏」的真实缺陷：
  * SessionGate 在会话未就绪时 `return null`，导致根布局不渲染 Stack，
- * Expo Router 拿不到路由树 → 整屏空白。
+ * Expo Router 拿不到路由树 → 整屏空白，且没有任何报错。
  *
  * 这个测试断言：即使会话未就绪，根布局也必须渲染出内容（而非 null）。
  */
@@ -24,6 +24,11 @@ jest.mock('expo-router', () => {
   Stack.Screen = function Screen() {
     return null;
   };
+  // Protected 是 expo-router 的声明式认证组件，mock 时直接透传 children
+  Stack.Protected = function Protected({ children }: { children?: React.ReactNode }) {
+    return React.createElement(View, null, children);
+  };
+
   return {
     Stack,
     Redirect: () => null,
@@ -51,5 +56,17 @@ describe('根布局', () => {
     expect(toJSON()).not.toBeNull();
     // 并且导航器确实被渲染
     expect(screen.getByTestId('router-stack')).toBeTruthy();
+  });
+
+  it('未就绪时覆盖启动加载层（而不是白屏）', async () => {
+    /* eslint-disable @typescript-eslint/no-require-imports */
+    const RootLayout = require('~app/_layout').default;
+    /* eslint-enable @typescript-eslint/no-require-imports */
+
+    await render(<RootLayout />);
+
+    // BootSplash 里有 ActivityIndicator，说明给了加载反馈而非空白
+    const json = JSON.stringify(screen.toJSON());
+    expect(json).toContain('ActivityIndicator');
   });
 });

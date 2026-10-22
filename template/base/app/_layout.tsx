@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -13,13 +13,10 @@ import { AppErrorBoundary, AppToast } from '@/components';
 import { refreshToken } from '@/features/auth/api';
 import { useSessionBootstrap } from '@/features/auth/hooks';
 import { useUserStore } from '@/features/auth/store';
+import { resolveIsLoggedIn } from '@/features/auth/session';
 import { queryClient } from '@/lib/query-client';
 import { useAppStore } from '@/stores/app-store';
-import {
-  getAccessToken,
-  registerRefreshHandler,
-  registerSessionExpiredHandler,
-} from '@/lib/token-store';
+import { registerRefreshHandler, registerSessionExpiredHandler } from '@/lib/token-store';
 import { UpdateDialog } from '@/features/updates/UpdateDialog';
 import { useUpdate } from '@/features/updates/hooks';
 import { setupGlobalErrorHandlers } from '@/utils/global-error-handler';
@@ -71,12 +68,9 @@ export default function RootLayout() {
 function SessionGate() {
   const { isReady } = useSessionBootstrap();
   const router = useRouter();
-  const segments = useSegments();
-  const userInfo = useUserStore((s) => s.userInfo);
-  // 导航容器是否已挂载。在它就绪前调用 router.replace 会被静默丢弃，
-  // 导致「以为跳转了、其实停在原地」——这也是白屏的常见成因。
-  const rootNavigationState = useRootNavigationState();
-  const navigationReady = Boolean(rootNavigationState?.key);
+  // 订阅 userInfo 变化：登录/登出后需重新计算登录态，触发 Protected 重新求值
+  useUserStore((s) => s.userInfo);
+  const isLoggedIn = resolveIsLoggedIn();
 
   // 注册 token 刷新处理器（single-flight 由 token-store 保证）
   useEffect(() => {
@@ -119,23 +113,6 @@ function SessionGate() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReady]);
 
-  // 登录态与路由分组同步
-  useEffect(() => {
-    // 必须同时满足：会话已恢复 + 导航容器已就绪，否则 replace 会被丢弃
-    if (!isReady || !navigationReady) return;
-
-    const inAuthGroup = segments[0] === '(auth)';
-    const isLoggedIn = Boolean(getAccessToken() ?? userInfo);
-
-    if (!isLoggedIn && !inAuthGroup) {
-      router.replace('/(auth)/login');
-    } else if (isLoggedIn && inAuthGroup) {
-      // 注意：(main) 只是分组，没有自己的 index 路由，
-      // 跳转必须指向分组内的具体页面，否则会被 typedRoutes 拒绝。
-      router.replace('/(main)/home');
-    }
-  }, [isReady, navigationReady, segments, userInfo, router]);
-
   // 会话就绪后隐藏启动屏
   useEffect(() => {
     if (isReady) {
@@ -144,19 +121,31 @@ function SessionGate() {
   }, [isReady]);
 
   /*
-   * 重要：这里绝不能 `return null`。
+   * 认证路由用 Stack.Protected 声明式控制（expo-router 官方推荐方案）。
    *
-   * Expo Router 要求根布局始终渲染导航器（Stack）。一旦返回 null，
-   * 导航容器拿不到路由树，整屏就变成空白 —— 这正是之前启动白屏的原因。
-   * 未就绪时改为「照常渲染 Stack + 盖一层 Loading 覆盖层」，
-   * 覆盖层挡在路由之上，用户看到的是加载态而不是白屏。
+   * 为什么不用 useEffect + router.replace：
+   * 那种写法依赖「导航容器已就绪」这个隐含前提，时序稍有偏差跳转就被丢弃，
+   * 表现为一直停在入口页（白屏或转圈），且没有任何报错。
+   * Protected 由路由层直接判断可访问性，不依赖任何时序。
+   *
+   * 注意：这里绝不能 `return null` —— Expo Router 要求根布局始终渲染导航器，
+   * 否则导航容器拿不到路由树，整屏空白。
    */
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(main)" />
+
+        {/* 未登录才可访问 */}
+        <Stack.Protected guard={!isLoggedIn}>
+          <Stack.Screen name="(auth)" />
+        </Stack.Protected>
+
+        {/* 已登录才可访问 */}
+        <Stack.Protected guard={isLoggedIn}>
+          <Stack.Screen name="(main)" />
+        </Stack.Protected>
+
         <Stack.Screen name="modal/confirm" options={{ presentation: 'transparentModal' }} />
       </Stack>
       {!isReady ? <BootSplash /> : null}

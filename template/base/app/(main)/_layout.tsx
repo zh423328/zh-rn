@@ -44,30 +44,36 @@ export default function MainLayout() {
 
   const insets = useSafeAreaInsets();
 
+  /*
+   * TabBar 尺寸约定（文字消失问题的修复）：
+   * 之前把 height 写死成 56 + insets.bottom，但图标区 24px + 文字 14px
+   * + padding 已超出内容高度，中文标签被挤出可视区只剩图标。
+   *
+   * 现在改为按内容算：图标 24 + 间距 2 + 文字 16 + 上下 padding 10 ≈ 52，
+   * 再叠加底部安全区。并且显式开启 tabBarShowLabel，确保标签一定渲染。
+   */
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#4f7cff',
         tabBarInactiveTintColor: '#8a9099',
-        // 高度 = 内容高度 + 底部安全区，否则手势条（home indicator）
-        // 会压住中文标签，出现「文字显示不全」。
+        tabBarShowLabel: true,
         tabBarStyle: {
-          height: 56 + insets.bottom,
-          paddingBottom: insets.bottom + 4,
-          paddingTop: 6,
+          height: 52 + insets.bottom,
+          paddingTop: 5,
+          paddingBottom: insets.bottom + 5,
         },
-        // 中文标签需要足够行高，否则会被裁切
         tabBarLabelStyle: {
           fontSize: 11,
-          lineHeight: 14,
-          marginTop: 2,
+          lineHeight: 16,
+          marginTop: 1,
         },
         tabBarIconStyle: {
-          marginBottom: 0,
+          marginTop: 0,
         },
         tabBarItemStyle: {
-          paddingVertical: 2,
+          paddingVertical: 0,
         },
       }}
     >
