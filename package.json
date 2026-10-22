@@ -1,0 +1,30 @@
+{
+  "name": "@zayn919/create-zh-rn",
+  "version": "0.1.0",
+  "description": "创建一个符合中文开发习惯的 React Native 项目脚手架（Expo SDK 55 + Expo Router v7 + NativeWind）",
+  "main": "index.js",
+  "bin": {
+    "create-zh-rn": "./index.js"
+  },
+  "files": [
+    "template",
+    "index.js"
+  ],
+  "keywords": [
+    "react-native",
+    "expo",
+    "template",
+    "boilerplate"
+  ],
+  "author": "Zayn",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "chalk": "^4.1.0",
+    "fs-extra": "^11.3.4",
+    "prompts": "^2.4.0",
+    "validate-npm-package-name": "^4.0.0"
+  }
+}
