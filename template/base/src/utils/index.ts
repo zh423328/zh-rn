@@ -1,11 +1,4 @@
 export * from './debounce';
-export * from './helpers';
-
-import { router } from 'expo-router';
-
-/**
- * 回到首页（登录成功后使用）
- */
-export function reLaunchToHome() {
-  router.replace('/');
-}
+export * from './global-error-handler';
+export * from './logger';
+export * from './platform';

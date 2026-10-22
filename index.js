@@ -105,11 +105,25 @@ async function main() {
   // 复制模板文件
   console.log(chalk.blue('📁 正在创建项目...'));
 
+  // 复制时排除无需交付的内容（依赖目录、构建产物、lockfile 等）
+  const IGNORED = ['node_modules', '.expo', 'dist', 'web-build', '.DS_Store'];
+
   try {
     // 复制基础模板
     await fs.copy(
       path.join(__dirname, 'template', response.template),
-      projectPath
+      projectPath,
+      {
+        filter: (src) => {
+          const name = path.basename(src);
+          if (IGNORED.includes(name)) return false;
+          // lockfile 不随模板复制：生成项目应按当时的镜像/版本自行解析
+          if (name === 'pnpm-lock.yaml' || name === 'package-lock.json' || name === 'yarn.lock') {
+            return false;
+          }
+          return true;
+        },
+      }
     );
 
     // 更新 package.json 中的项目名称

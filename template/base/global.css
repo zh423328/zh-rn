@@ -1,11 +1,18 @@
-@import "tailwindcss";
-@import "nativewind/theme";
-
 /*
- * Tailwind CSS v4 采用 CSS-first 配置：
- * 通过 @theme 定义设计令牌，替代 v4 时代的 tailwind.config.js。
- * 下面定义了模板的默认主题色，可按项目需求修改。
+ * Tailwind CSS v4 采用 CSS-first 配置：@theme 中定义设计令牌，
+ * 不再需要 tailwind.config.js。
+ *
+ * 注意 1：NativeWind v5 要求 utilities 保持「不分层」，
+ *   因此这里用三条 @import 而不是单条 @import "tailwindcss"，
+ *   否则在 Web 上 utilities 会被压到 RNW 默认样式下面。
+ * 注意 2：本文件由 metro.config.js 的 withNativewind({ input }) 指定。
  */
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
+@import 'tailwindcss/utilities.css';
+
+@import 'nativewind/theme';
+
 @theme {
   --color-primary: #4f7cff;
   --color-primary-foreground: #ffffff;
@@ -15,4 +22,9 @@
   --color-text-secondary: #8a9099;
   --color-danger: #fa5151;
   --color-success: #07c160;
+  --color-border: #e6e8ee;
+
+  /* 横屏优先布局用的断点（供 md: / lg: 前缀使用） */
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
 }

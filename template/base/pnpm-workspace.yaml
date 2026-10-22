@@ -1,0 +1,32 @@
+# pnpm 配置
+#
+# 重要：pnpm 10+ 起不再读取 package.json 里的 `pnpm` 字段
+# （pnpm 11 会明确警告：The "pnpm" field in package.json is no longer read）。
+# 所以 overrides 必须写在这里，写进 package.json 是无效的。
+
+# lightningcss 必须锁 1.30.1：
+# NativeWind v5（RC）用 lightningcss 编译 CSS，更高版本会报
+#   failed to deserialize; expected an object-like struct named Specifier
+# 导致 Android/iOS 原生打包直接失败。
+overrides:
+  lightningcss: 1.30.1
+
+# 允许需要编译/执行安装脚本的依赖。
+# 不列出来时 pnpm 会以 ERR_PNPM_IGNORED_BUILDS 让 `pnpm install` 失败，
+# 进而导致 `expo lint` 等命令报错。
+allowBuilds:
+  '@parcel/watcher': true
+  '@tailwindcss/oxide': true
+  unrs-resolver: true
+
+# SDK 57 这批包发布时间较新，在开启了 minimumReleaseAge 策略的机器上会被拦截。
+# 这里显式放行，避免 pnpm install 报 MINIMUM_RELEASE_AGE_VIOLATION。
+minimumReleaseAgeExclude:
+  - '@expo/cli@57.0.32'
+  - '@expo/config-plugins@57.0.11'
+  - '@expo/router-server@57.0.14'
+  - '@expo/ui@57.0.26'
+  - expo-modules-core@57.0.24
+  - expo-modules-jsi@57.1.3
+  - expo-router@57.0.29
+  - expo@57.0.31

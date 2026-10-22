@@ -15,25 +15,25 @@ export interface IVerificationCodeReq {
   phoneNumber: string;
 }
 
-/** 登录返回 */
-export interface ILoginRes {
-  access_token: string;
-  user: {
-    id: number;
-    username: string;
-    nickname: string;
-    avatar: string;
-    role: string;
-    phoneNumber?: string;
-  };
-}
-
 /** 用户信息 */
-export interface IUserInfoRes {
+export interface IUserInfo {
   id: number;
   username: string;
   nickname: string;
   avatar: string;
   role: string;
   phoneNumber?: string;
+}
+
+/** 登录返回 */
+export interface ILoginRes {
+  access_token: string;
+  refresh_token?: string;
+  user: IUserInfo;
+}
+
+/** token 刷新返回 */
+export interface IRefreshTokenRes {
+  access_token: string;
+  refresh_token?: string;
 }
