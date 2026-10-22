@@ -60,6 +60,19 @@ src/
 
 改完重启 `pnpm start -c` 生效。
 
+## 从 Tailwind v3 过来的说明
+
+日常写的工具类（`flex`、`p-4`、`text-sm`、`rounded-xl`…）与 v3 **完全一致**，没有学习成本。变化只在配置层：
+
+| v3（web 项目常见） | v4（本模板） |
+| --- | --- |
+| `tailwind.config.js` 配主题 | 直接在 `global.css` 的 `@theme` 块写 CSS 变量 |
+| `@tailwind base; @tailwind components; …` | `@import "tailwindcss";` 一行 |
+| `postcss.config.js` | 不需要（NativeWind 走 Metro 处理） |
+| 阴影刻度旧值（`shadow-sm` 较大） | 刻度重校准，`shadow-sm` 更轻（更接近 v3 的 `shadow-xs`） |
+
+透明度语法 `bg-black/50`、`text-white/80` 直接可用。完整差异见 Tailwind v4 升级指南：https://tailwindcss.com/docs/upgrade-guide
+
 ## 常用命令
 
 ```bash
