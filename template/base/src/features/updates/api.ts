@@ -69,6 +69,15 @@ export async function checkForUpdates(): Promise<IUpdateDecision> {
     apkAvailable: false,
   };
 
+  // 开发环境直接跳过：
+  // - OTA 在 dev / Expo Go 下 isEnabled 恒为 false，检查必然无效
+  // - APK 自更新在调试阶段没有意义，还会打网络日志干扰排查
+  // 需要联调更新流程时，用 development build 或正式包验证。
+  if (__DEV__) {
+    logger.debug('updates', '开发环境跳过更新检查');
+    return decision;
+  }
+
   // ---- 1. 服务端版本信息 ----
   let info: IVersionInfo | undefined;
   try {

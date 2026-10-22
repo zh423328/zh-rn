@@ -3,10 +3,14 @@
 /**
  * Jest 初始化文件
  *
- * - 关闭 NativeWind / react-native-css 在测试环境中的样式编译，
- *   避免在 jsdom 之外触发 lightningcss 原生模块。
- * - 提供常用原生模块的 mock。
+ * 测试环境没有原生层，需要为所有涉及原生能力的模块提供 mock，
+ * 否则组件一旦被渲染就会抛 "NativeModule is null" 之类的错误。
  */
+
+// AsyncStorage 官方提供的 mock
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
 
 // expo-secure-store 在测试环境无原生实现
 jest.mock('expo-secure-store', () => {
@@ -33,9 +37,16 @@ jest.mock('expo-crypto', () => ({
 // expo-updates 在测试环境默认禁用
 jest.mock('expo-updates', () => ({
   isEnabled: false,
+  channel: null,
+  runtimeVersion: '1.0.0',
+  updateId: null,
+  isEmbeddedLaunch: true,
+  createdAt: null,
+  launchDuration: null,
   checkForUpdateAsync: jest.fn(),
   fetchUpdateAsync: jest.fn(),
   reloadAsync: jest.fn(),
+  readLogEntriesAsync: jest.fn(async () => []),
 }));
 
 // expo-application 固定版本号，便于断言
@@ -45,6 +56,84 @@ jest.mock('expo-application', () => ({
   applicationName: 'zh-rn-app',
   applicationId: 'com.company.example',
 }));
+
+// expo-splash-screen：组件树里会调用 hideAsync，需提供空实现
+jest.mock('expo-splash-screen', () => ({
+  preventAutoHideAsync: jest.fn(async () => {}),
+  hideAsync: jest.fn(async () => {}),
+  hide: jest.fn(),
+  setOptions: jest.fn(),
+}));
+
+// expo-file-system（新 API）用于 APK 下载，测试中不触达真实文件系统
+jest.mock('expo-file-system', () => {
+  class MockFile {
+    uri: string;
+    exists = false;
+    size = 0;
+    constructor(...parts: unknown[]) {
+      this.uri = `file:///mock/${parts.join('/')}`;
+    }
+    delete() {}
+    static createDownloadTask() {
+      return { downloadAsync: jest.fn(async () => null) };
+    }
+    static downloadFileAsync() {
+      return Promise.resolve(null);
+    }
+  }
+  class MockDirectory {
+    exists = true;
+    constructor(...parts: unknown[]) {
+      this.uri = `file:///mock/${parts.join('/')}`;
+    }
+    create() {}
+    delete() {}
+  }
+  return {
+    File: MockFile,
+    Directory: MockDirectory,
+    Paths: { cache: new MockDirectory('cache'), document: new MockDirectory('document') },
+  };
+});
+
+// expo-intent-launcher：安装 APK 用，测试中只断言调用
+jest.mock('expo-intent-launcher', () => ({
+  startActivityAsync: jest.fn(async () => ({ resultCode: 0 })),
+  ActivityAction: {},
+}));
+
+// gesture-handler 需要原生模块，测试中用官方 jestSetup
+jest.mock('react-native-gesture-handler', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    GestureHandlerRootView: ({ children }: { children?: React.ReactNode }) =>
+      React.createElement(View, null, children),
+    Gesture: { Pan: () => ({ onUpdate: () => ({}) }) },
+    GestureDetector: ({ children }: { children?: React.ReactNode }) => children,
+    State: {},
+    Directions: {},
+  };
+});
+
+// safe-area-context：提供固定 insets，避免依赖原生测量
+jest.mock('react-native-safe-area-context', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const insets = { top: 0, right: 0, bottom: 0, left: 0 };
+  const frame = { x: 0, y: 0, width: 390, height: 844 };
+  return {
+    SafeAreaProvider: ({ children }: { children?: React.ReactNode }) =>
+      React.createElement(View, null, children),
+    SafeAreaView: ({ children, ...props }: { children?: React.ReactNode }) =>
+      React.createElement(View, props, children),
+    SafeAreaInsetsContext: React.createContext(insets),
+    useSafeAreaInsets: () => insets,
+    useSafeAreaFrame: () => frame,
+    initialWindowMetrics: { insets, frame },
+  };
+});
 
 // 屏蔽测试期间的日志噪音（需要排查时可临时注释掉）
 jest.spyOn(console, 'log').mockImplementation(() => {});

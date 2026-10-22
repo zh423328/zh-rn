@@ -120,8 +120,8 @@ export default function Home() {
               <Text className="text-sm font-semibold text-primary-foreground">检查更新</Text>
             </Pressable>
             <Text className="mt-2 text-xs text-text-secondary">
-              expo-updates 在 development build / 正式包中生效，Expo Go 下会静默跳过。
-              发布流程见 docs/ota-updates-guide.md
+              开发环境不检查；正式包中会先比对服务端版本，
+              再决定走 OTA 热更新还是 APK 更新。详见 docs/app-updates-guide.md
             </Text>
           </View>
         </View>

@@ -1,6 +1,4 @@
-import { Directory, File, Paths } from 'expo-file-system';
-import * as IntentLauncher from 'expo-intent-launcher';
-import * as Application from 'expo-application';
+import type { Directory as DirectoryType, File as FileType } from 'expo-file-system';
 import { Platform } from 'react-native';
 
 import { logger } from '@/utils/logger';
@@ -19,19 +17,64 @@ import type { IDownloadProgress } from './types';
  * - 下载后做 SHA-256 校验，防止 CDN 篡改 / 下载不完整。
  */
 
+/**
+ * 原生模块延迟加载
+ *
+ * 为什么不用顶层 import：
+ * `expo-intent-launcher` 不在 Expo Go 的内置模块列表里。如果顶层静态 import，
+ * 只要这个文件被引入（即便从不调用 APK 功能），模块求值阶段就会抛错，
+ * 表现为「启动白屏 + 终端无报错」——非常难排查。
+ * 改成用到时才 require，Expo Go 下只要不触发 APK 更新就不会炸。
+ */
+function loadFileSystem() {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const fs = require('expo-file-system');
+  return fs as typeof import('expo-file-system');
+}
+
+function loadIntentLauncher() {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('expo-intent-launcher');
+  return mod as typeof import('expo-intent-launcher');
+}
+
+function loadApplication() {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('expo-application');
+  return mod as typeof import('expo-application');
+}
+
+/**
+ * 是否运行在 Expo Go 中
+ *
+ * Expo Go 是沙盒容器，不包含所有原生模块。
+ * 依赖原生能力的更新流程（下载/安装 APK）在 Expo Go 下必然失败。
+ */
+function isExpoGo(): boolean {
+  try {
+    const Application = loadApplication();
+    // Expo Go 的 applicationId 固定为 host.exp.exponent
+    return Application.applicationId === 'host.exp.exponent';
+  } catch {
+    return false;
+  }
+}
+
 /** 安装未知来源应用的设置页 action */
 const ACTION_MANAGE_UNKNOWN_APP_SOURCES =
   'android.settings.MANAGE_UNKNOWN_APP_SOURCES';
 
 /** 下载目录（应用私有缓存，卸载即清） */
-function getApkDirectory(): Directory {
+function getApkDirectory(): DirectoryType {
+  const { Directory, Paths } = loadFileSystem();
   const dir = new Directory(Paths.cache, 'apk');
   if (!dir.exists) dir.create({ intermediates: true, idempotent: true });
   return dir;
 }
 
 /** 生成下载目标文件 */
-function getApkFile(version: string): File {
+function getApkFile(version: string): FileType {
+  const { File } = loadFileSystem();
   return new File(getApkDirectory(), `update-${version}.apk`);
 }
 
@@ -50,13 +93,20 @@ export async function downloadApk(params: {
   onProgress?: (progress: IDownloadProgress) => void;
   /** 已存在同名文件时是否直接复用（默认 false，重新下载） */
   reuseExisting?: boolean;
-}): Promise<File> {
+}): Promise<FileType> {
   const { url, version, onProgress, reuseExisting = false } = params;
 
   if (Platform.OS !== 'android') {
     throw new Error('APK 下载仅支持 Android');
   }
 
+  // Expo Go 不包含 expo-intent-launcher / expo-file-system 的原生实现，
+  // 在这里直接拦掉，给出明确提示而不是让用户撞到一个难懂的崩溃。
+  if (isExpoGo()) {
+    throw new Error('Expo Go 不支持应用内更新，请使用 development build 或正式包');
+  }
+
+  const { File } = loadFileSystem();
   const target = getApkFile(version);
 
   // 用户上次取消安装后重试：复用已下载完的文件，省流量
@@ -105,7 +155,7 @@ export async function downloadApk(params: {
  * （如 CDN 返回 404 HTML 而不是 APK）。
  */
 export function verifyApk(
-  file: File,
+  file: FileType,
   expected?: { size?: number; hash?: string },
 ): { valid: boolean; reason?: string } {
   if (!file.exists) {
@@ -138,7 +188,7 @@ export function verifyApk(
  * 通过 IntentLauncher 发送 ACTION_VIEW intent，
  * 用 FileProvider 的 content:// URI 把文件交给系统安装器。
  */
-export async function installApk(file: File): Promise<void> {
+export async function installApk(file: FileType): Promise<void> {
   if (Platform.OS !== 'android') {
     throw new Error('APK 安装仅支持 Android');
   }
@@ -147,6 +197,7 @@ export async function installApk(file: File): Promise<void> {
   // Android 7+ 必须转成 content:// 才能被安装器读取
   const contentUri = await toContentUri(file.uri);
 
+  const IntentLauncher = loadIntentLauncher();
   await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
     data: contentUri,
     // APK 的 MIME 类型，缺少它安装器不会识别
@@ -174,6 +225,8 @@ async function toContentUri(fileUri: string): Promise<string> {
 export async function openUnknownSourcesSettings(): Promise<void> {
   if (Platform.OS !== 'android') return;
 
+  const Application = loadApplication();
+  const IntentLauncher = loadIntentLauncher();
   const packageName = Application.applicationId;
   try {
     await IntentLauncher.startActivityAsync(ACTION_MANAGE_UNKNOWN_APP_SOURCES, {

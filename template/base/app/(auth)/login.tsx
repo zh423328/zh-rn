@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -60,9 +68,27 @@ export default function Login() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <View className="w-full max-w-md flex-1 self-center px-6">
-        <View className="mt-12">
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
+      {/*
+       * 登录页必须处理键盘遮挡：
+       * Android 默认 adjustResize 会压缩窗口，若子元素不能收缩（RN 默认 flexShrink: 0），
+       * 各元素会溢出并互相重叠 —— 这就是之前排版错位的原因。
+       * 解决方式：外层 KeyboardAvoidingView + 内层 ScrollView，内容可滚动且自动避让。
+       */}
+      <KeyboardAvoidingView
+        className="flex-1"
+        testID="login-keyboard-avoiding"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          testID="login-scroll"
+          className="flex-1"
+          contentContainerClassName="grow justify-center px-6 py-8"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+      <View className="w-full max-w-md self-center">
+        <View>
           <Text className="text-3xl font-bold text-text">欢迎登录</Text>
           <Text className="mt-2 text-sm text-text-secondary">
             zh-rn-app · Expo + NativeWind 企业级模板
@@ -151,6 +177,8 @@ export default function Login() {
           </Text>
         </View>
       </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
