@@ -1,6 +1,6 @@
 {
   "name": "@zayn919/create-zh-rn",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "创建一个符合中文开发习惯的 React Native 项目脚手架（Expo SDK 55 + Expo Router v7 + NativeWind）",
   "main": "index.js",
   "bin": {
