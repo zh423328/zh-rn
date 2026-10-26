@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
+import type { ColorValue } from 'react-native';
 // SDK 57 的 expo-router（57.x）没有 exports map，`expo-router/js-tabs`
 // 子路径不存在，必须从包根导入。SDK 58 才提供 js-tabs 子路径。
 import { Tabs } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { connectNotifications } from '@/features/notifications/notification-store';
@@ -10,73 +11,69 @@ import { connectNotifications } from '@/features/notifications/notification-stor
 /**
  * 登录后主业务区
  *
- * Tab 用 Expo Router 的 Tabs，导航状态由路由统一管理，
- * 不要自己再维护一套 tab 索引。
+ * 图标方案：@expo/vector-icons（Expo 官方图标库，Ionicons 字体图标）。
+ * 之前用字符（⌂ ▤ ☺）当图标：字形基线与库内部 TabBarIcon 的固定高度（28px）
+ * 对不上，反复出现「文字被裁 / 只剩图标」。字体图标按库预期的方式渲染，
+ * 不再需要任何布局 hack。
  *
- * 实时消息连接生命周期跟随本分组挂载：进入主业务区才连，
- * 退回登录页即断开，避免未登录状态下维持长连接。
- *
- * 横屏说明：这里没有写死宽度/高度，靠 flex + safe-area 自适应。
+ * 布局原则：除颜色与底部安全区外，不自定义 tabBarStyle —— 库默认的
+ * 49 + 安全区已为「图标 + 文字」调好，任何额外高度都可能挤压标签。
  */
 
-/**
- * Tab 图标
- *
- * 注意：不要再套一层带固定高度的 View。
- * react-navigation 的 TabBarIcon 内部已经给了图标固定高度（ICON_SIZE_TALL），
- * 外面再加 h-6 会让图标区超出 tabBar 的布局预算，把下方的文字标签挤掉
- * —— 这就是之前「只有图标、没有文字」的原因。
- */
-function TabIcon({ label, focused }: { label: string; focused: boolean }) {
-  return (
-    <Text
-      style={{
-        fontSize: 20,
-        lineHeight: 24,
-        color: focused ? '#4f7cff' : '#8a9099',
-      }}
-    >
-      {label}
-    </Text>
-  );
+function TabIcon({
+  name,
+  focused,
+  color,
+}: {
+  name: keyof typeof Ionicons.glyphMap;
+  focused: boolean;
+  // tabBarIcon 回调给的 color 是 ColorValue（可能是 OpaqueColorValue），
+  // Ionicons 的 color 同样接受 ColorValue，直接透传即可
+  color: ColorValue;
+}) {
+  return <Ionicons name={name} size={24} color={color} />;
 }
 
 export default function MainLayout() {
   useEffect(() => {
-    // 返回清理函数：卸载时取消订阅并断开连接
+    // 进入主业务区才连实时消息，退出登录分组卸载时断开
     const disconnect = connectNotifications();
     return disconnect;
   }, []);
 
   const insets = useSafeAreaInsets();
 
-  /*
-   * TabBar 尺寸：按内容反推，别拍脑袋写死。
-   *
-   * 组成：图标 24 + 文字 16 + 上下内边距 8 + 底部安全区
-   * 参考：react-navigation 默认是 49 + inset，中文标签需要更多空间，
-   * 这里给到 60 + inset，确保「首页 / 设备 / 我的」完整可见。
-   */
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#4f7cff',
         tabBarInactiveTintColor: '#8a9099',
-        tabBarShowLabel: true,
+        /*
+         * 标签位置必须显式固定（关键一）：
+         * 不设时库按屏幕尺寸猜 —— 宽 >= 768 或 宽 > 高 会切成 beside-icon
+         * （标签与图标同行），默认高度放不下 → 标签消失只剩图标。
+         *
+         * 高度必须显式给足（关键二）：
+         * 用 Playwright 实测库默认布局的真实高度：
+         *   bar 48 ＝ item 上下 padding 10 + 图标 28 + 标签仅剩 10px
+         * 标签被 flex 压到 10px 且 overflow:hidden，中文字形需要 ~14px，
+         * 下半截被裁 —— 这就是「文字只显示一半」的直接原因。
+         * 库默认 49 是按英文标签（fontSize 10，单行紧凑）调的，中文不够用。
+         *
+         * 修复：height 58 + insets.bottom。注意只设 height、不动 paddingBottom
+         * （库自己会设 paddingBottom: insets.bottom），这样
+         * 内容区 = (58+inset) − inset = 58，在任何平台都是 58：
+         *   58 − item padding 10 − 图标 28 = 标签 20px ≥ 16 ✓
+         * 之前几轮失败的共性：paddingBottom 也动了，内容区被二次压缩。
+         */
+        tabBarLabelPosition: 'below-icon',
         tabBarStyle: {
-          height: 60 + insets.bottom,
-          paddingTop: 6,
-          paddingBottom: insets.bottom + 6,
+          height: 58 + insets.bottom,
         },
         tabBarLabelStyle: {
           fontSize: 12,
           lineHeight: 16,
-          marginTop: 2,
-          marginBottom: 0,
-        },
-        tabBarIconStyle: {
-          marginBottom: 0,
         },
       }}
     >
@@ -84,21 +81,31 @@ export default function MainLayout() {
         name="home"
         options={{
           title: '首页',
-          tabBarIcon: ({ focused }) => <TabIcon label="⌂" focused={focused} />,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="devices"
         options={{
           title: '设备',
-          tabBarIcon: ({ focused }) => <TabIcon label="▤" focused={focused} />,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name={focused ? 'grid' : 'grid-outline'} focused={focused} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: '我的',
-          tabBarIcon: ({ focused }) => <TabIcon label="☺" focused={focused} />,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              name={focused ? 'person' : 'person-outline'}
+              focused={focused}
+              color={color}
+            />
+          ),
         }}
       />
     </Tabs>
