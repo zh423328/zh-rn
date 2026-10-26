@@ -8,6 +8,7 @@ import { getInstallId } from '@/lib/device-install-id';
 import { useRegisterDevice } from '@/features/devices/hooks';
 import { getDeviceContext } from '@/utils/platform';
 import { useEffect, useState } from 'react';
+import { ripple } from '@/theme';
 
 /** 我的：账号信息、设备标识、登出 */
 export default function Profile() {
@@ -17,7 +18,9 @@ export default function Profile() {
   const [installId, setInstallId] = useState('');
 
   useEffect(() => {
-    getInstallId().then(setInstallId).catch(() => setInstallId('获取失败'));
+    getInstallId()
+      .then(setInstallId)
+      .catch(() => setInstallId('获取失败'));
   }, []);
 
   const ctx = getDeviceContext();
@@ -65,6 +68,7 @@ export default function Profile() {
             <Pressable
               onPress={handleRegister}
               disabled={registerDevice.isPending}
+              android_ripple={ripple.onSurface}
               accessibilityRole="button"
               className="mt-3 h-10 items-center justify-center rounded-xl border border-primary active:opacity-80 disabled:opacity-60"
             >
@@ -77,6 +81,7 @@ export default function Profile() {
           <Pressable
             onPress={handleLogout}
             disabled={logout.isPending}
+            android_ripple={ripple.onPrimary}
             accessibilityRole="button"
             className="mt-6 h-12 items-center justify-center rounded-xl bg-danger active:opacity-80 disabled:opacity-60"
           >

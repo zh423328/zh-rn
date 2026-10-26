@@ -2,6 +2,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { logger, sanitize } from '@/utils/logger';
+import { ripple } from '@/theme';
 
 interface Props {
   children: ReactNode;
@@ -60,6 +61,7 @@ export class AppErrorBoundary extends Component<Props, State> {
         ) : null}
         <Pressable
           onPress={this.reset}
+          android_ripple={ripple.onPrimary}
           accessibilityRole="button"
           className="mt-6 h-11 items-center justify-center rounded-xl bg-primary px-6 active:opacity-80"
         >

@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { connectNotifications } from '@/features/notifications/notification-store';
+import { TabBarButton } from '@/components';
 
 /**
  * 登录后主业务区
@@ -75,6 +76,15 @@ export default function MainLayout() {
           fontSize: 12,
           lineHeight: 16,
         },
+        /*
+         * 替换默认 tab 按钮，修掉「点 tab 出现一块很大阴影」的问题。
+         *
+         * 库默认给按钮传 android_ripple: { borderless: true }，而 uikit
+         * 变体的外层容器是 overflow: 'visible' —— 水波纹不受 item 边界裁剪，
+         * 会在整条 tabBar 上扩散成一个大圆并残留浅灰，看起来就像一块大阴影。
+         * 我们改成 borderless: false，让 ripple 被 tab 项自身裁掉。
+         */
+        tabBarButton: (props) => <TabBarButton {...props} />,
       }}
     >
       <Tabs.Screen

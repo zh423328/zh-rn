@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
+import Animated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
 
 import { EmptyView, ErrorView, LoadingView, Screen } from '@/components';
 import { useDevices, useLockDevice, useUnlockDevice } from '@/features/devices/hooks';
 import { toErrorMessage } from '@/features/auth/hooks';
 import type { IDevice } from '@/features/devices/types';
+import { ripple } from '@/theme';
 
 /**
  * 设备列表
@@ -70,19 +72,27 @@ export default function Devices() {
               onAction={() => refetch()}
             />
           }
-          renderItem={({ item }) => (
-            <View className="flex-row items-center rounded-xl bg-surface p-4 shadow-sm">
+          renderItem={({ item, index }) => (
+            /*
+             * 列表项入场：按索引交错（每项 +50ms），最多叠加到 400ms。
+             * 用 entering 而不是包一层 FadeInView：
+             * FlatList 复用单元格，若用包裹组件，回收后的行不会重播动画；
+             * entering 由 Reanimated 在挂载时触发，语义正确且不增加树深度。
+             * layout 负责删除/重排时的平滑过渡。
+             */
+            <Animated.View
+              entering={FadeInDown.delay(Math.min(index * 50, 400)).duration(260)}
+              layout={LinearTransition.springify().damping(18)}
+              className="flex-row items-center rounded-xl bg-surface p-4 shadow-sm"
+            >
               <View className="flex-1">
                 <Text className="text-base font-semibold text-text">{item.name}</Text>
                 <Text className="mt-1 text-xs text-text-secondary">
-                  {item.status === 'online'
-                    ? '在线'
-                    : item.status === 'locked'
-                      ? '已锁定'
-                      : '离线'}
+                  {item.status === 'online' ? '在线' : item.status === 'locked' ? '已锁定' : '离线'}
                 </Text>
               </View>
               <Pressable
+                android_ripple={ripple.onSurface}
                 onPress={() => toggleLock(item)}
                 disabled={lock.isPending || unlock.isPending}
                 accessibilityRole="button"
@@ -92,13 +102,14 @@ export default function Devices() {
                   {item.status === 'locked' ? '解锁' : '锁定'}
                 </Text>
               </Pressable>
-            </View>
+            </Animated.View>
           )}
         />
 
         {list.length > 0 ? (
           <View className="flex-row items-center justify-center gap-4 py-3">
             <Pressable
+              android_ripple={ripple.onPlain}
               onPress={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
               className="px-3 py-1 active:opacity-60 disabled:opacity-40"
@@ -107,6 +118,7 @@ export default function Devices() {
             </Pressable>
             <Text className="text-sm text-text">第 {page} 页</Text>
             <Pressable
+              android_ripple={ripple.onPlain}
               onPress={() => setPage((p) => p + 1)}
               className="px-3 py-1 active:opacity-60"
             >

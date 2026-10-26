@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
+import { ripple } from '@/theme';
 
 interface EmptyViewProps {
   title?: string;
@@ -24,6 +25,7 @@ export function EmptyView({
       {actionLabel && onAction ? (
         <Pressable
           onPress={onAction}
+          android_ripple={ripple.onSurface}
           accessibilityRole="button"
           className="mt-5 h-10 items-center justify-center rounded-lg border border-primary px-5 active:opacity-80"
         >
@@ -48,6 +50,7 @@ export function ErrorView({ message = '加载失败，请稍后重试', onRetry 
       {onRetry ? (
         <Pressable
           onPress={onRetry}
+          android_ripple={ripple.onPrimary}
           accessibilityRole="button"
           className="mt-5 h-10 items-center justify-center rounded-lg bg-primary px-5 active:opacity-80"
         >

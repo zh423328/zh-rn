@@ -2,6 +2,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'rea
 
 import { formatBytes } from '@/features/updates/version';
 import { useUpdate } from '@/features/updates/hooks';
+import { ripple } from '@/theme';
 
 /**
  * 更新弹窗
@@ -15,7 +16,8 @@ export function UpdateDialog() {
   const { phase, decision, progress, error, hasUpdate, force, runOta, runApk, dismiss, reset } =
     useUpdate();
 
-  const visible = hasUpdate || phase === 'downloading' || phase === 'installing' || phase === 'error';
+  const visible =
+    hasUpdate || phase === 'downloading' || phase === 'installing' || phase === 'error';
   if (!visible) return null;
 
   const busy = phase === 'downloading' || phase === 'verifying' || phase === 'installing';
@@ -43,9 +45,7 @@ export function UpdateDialog() {
     >
       <View className="flex-1 items-center justify-center bg-black/50 px-6">
         <View className="w-full max-w-md rounded-2xl bg-surface p-6">
-          <Text className="text-lg font-bold text-text">
-            {isApk ? '发现新版本' : '有内容更新'}
-          </Text>
+          <Text className="text-lg font-bold text-text">{isApk ? '发现新版本' : '有内容更新'}</Text>
 
           {/* 版本信息 */}
           <View className="mt-2">
@@ -99,6 +99,7 @@ export function UpdateDialog() {
               <Pressable
                 onPress={handleLater}
                 disabled={busy}
+                android_ripple={ripple.onSurface}
                 accessibilityRole="button"
                 className="h-11 flex-1 items-center justify-center rounded-xl border border-border active:opacity-80 disabled:opacity-40"
               >
@@ -108,6 +109,7 @@ export function UpdateDialog() {
             <Pressable
               onPress={handlePrimary}
               disabled={busy}
+              android_ripple={ripple.onPrimary}
               accessibilityRole="button"
               className="h-11 flex-1 items-center justify-center rounded-xl bg-primary active:opacity-80 disabled:opacity-60"
             >

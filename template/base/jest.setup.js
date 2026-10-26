@@ -12,6 +12,20 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
+// Reanimated：必须替换掉。
+// 测试环境没有 worklets / reanimated 的原生层，真实实现一 import 就会
+// 去访问不存在的原生模块；而 expo-router 的原生 Stack 会间接拉起这条
+// 依赖链，让 renderRouter 直接抛错。
+//
+// 替身实现见 test-mocks/reanimated.js（动画瞬时完成）。
+// 该目录不能叫 __mocks__：jest 会把 __mocks__ 下与包同名的文件
+// 当作自动 mock，从而出现「mock 文件自己 require 自己」的无限递归。
+//
+// 另外 package.json 里把 `react-native-reanimated/mock` 也映射到了
+// 同一个替身 —— expo-router/testing-library 内部会用它做替换，
+// 而官方那个 mock 是 TS 源码，转译后缺少 useSharedValue 等具名导出。
+jest.mock('react-native-reanimated', () => require('./test-mocks/reanimated'));
+
 // expo-secure-store 在测试环境无原生实现
 jest.mock('expo-secure-store', () => {
   const store = new Map();

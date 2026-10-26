@@ -2,6 +2,7 @@ import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
 import { toast } from '@/components';
+import { ripple } from '@/theme';
 
 /**
  * 确认弹窗（Router modal）
@@ -21,6 +22,7 @@ export default function ConfirmModal() {
 
         <View className="mt-6 flex-row gap-3">
           <Pressable
+            android_ripple={ripple.onPlain}
             onPress={() => router.back()}
             accessibilityRole="button"
             className="h-11 flex-1 items-center justify-center rounded-xl border border-border active:opacity-80"
@@ -28,6 +30,7 @@ export default function ConfirmModal() {
             <Text className="text-sm font-semibold text-text">取消</Text>
           </Pressable>
           <Pressable
+            android_ripple={ripple.onPlain}
             onPress={() => {
               toast.success('已确认');
               router.back();

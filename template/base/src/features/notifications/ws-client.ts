@@ -66,7 +66,10 @@ export class WebSocketRealtimeClient implements RealtimeClient {
 
   async connect(): Promise<void> {
     if (!this.url) {
-      logger.warn('realtime', '未配置 EXPO_PUBLIC_REALTIME_URL，跳过连接');
+      // 用 debug 而非 warn：未配置实时地址属于「没有启用这个功能」的正常状态，
+      // 不是异常。用 warn 会让 Expo Go 每次启动都弹 LogBox 盖住整屏，
+      // 严重干扰界面与动画调试（本模板默认就没有配 REALTIME_URL）。
+      logger.debug('realtime', '未配置 EXPO_PUBLIC_REALTIME_URL，跳过连接');
       return;
     }
     if (this.ws?.readyState === WS_OPEN) return;
