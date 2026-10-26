@@ -15,6 +15,13 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# 原生工程目录：由 `expo prebuild` 生成，属于派生产物，不入库。
+# 需要自定义原生代码时，请用 Expo Config Plugin（app.json 的 plugins）
+# 或 expo-build-properties，而不是直接改这两个目录 —— 改了会被下次
+# prebuild 覆盖。确实要纳入版本管理时，删除下面两行即可。
+/ios
+/android
+
 # Metro
 .metro-health-check*
 
