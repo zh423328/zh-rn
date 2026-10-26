@@ -4,6 +4,22 @@
 
 基于 **Expo SDK 57**（React Native 0.86）+ **Expo Router v57**（文件式路由）+ **NativeWind v5**（Tailwind CSS v4）+ **TanStack Query v5** + **Zustand v5** + TypeScript strict。
 
+# 切换源
+
+```
+默认源 
+https://registry.npmmirror.com/
+npm config set registry=https://registry.npmjs.org/
+
+npm version patch   # 自动更新版本为 1.0.1
+git push --follow-tags
+
+npm publish --access public
+
+npx @zayn919/create-zh-rn
+
+```
+
 ## 快速开始
 
 ```bash
