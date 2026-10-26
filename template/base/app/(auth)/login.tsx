@@ -9,9 +9,8 @@ import {
   View,
 } from 'react-native';
 import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { toast } from '@/components';
+import { Screen, toast } from '@/components';
 import {
   toErrorMessage,
   useLoginByAccount,
@@ -68,7 +67,7 @@ export default function Login() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
+    <Screen className="flex-1 bg-background" edges={['top', 'bottom']}>
       {/*
        * 登录页必须处理键盘遮挡：
        * Android 默认 adjustResize 会压缩窗口，若子元素不能收缩（RN 默认 flexShrink: 0），
@@ -179,7 +178,7 @@ export default function Login() {
       </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 

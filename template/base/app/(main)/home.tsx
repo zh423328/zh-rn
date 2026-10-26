@@ -1,9 +1,8 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
 import { APP_NAME } from '@/config';
-import { toast } from '@/components';
+import { Screen, toast } from '@/components';
 import { useUserStore } from '@/features/auth/store';
 import { useLogout } from '@/features/auth/hooks';
 import { useNotificationStore } from '@/features/notifications/notification-store';
@@ -44,7 +43,7 @@ export default function Home() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <Screen className="flex-1 bg-background" edges={['top']}>
       <ScrollView contentContainerClassName="px-5 pb-10 pt-4">
         {/* 欢迎区 */}
         <View className="w-full max-w-5xl self-center">
@@ -126,6 +125,6 @@ export default function Home() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }

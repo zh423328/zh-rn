@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { EmptyView, ErrorView, LoadingView } from '@/components';
+import { EmptyView, ErrorView, LoadingView, Screen } from '@/components';
 import { useDevices, useLockDevice, useUnlockDevice } from '@/features/devices/hooks';
 import { toErrorMessage } from '@/features/auth/hooks';
 import type { IDevice } from '@/features/devices/types';
@@ -32,24 +31,24 @@ export default function Devices() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+      <Screen className="flex-1 bg-background" edges={['top']}>
         <LoadingView message="正在加载设备..." />
-      </SafeAreaView>
+      </Screen>
     );
   }
 
   if (isError) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+      <Screen className="flex-1 bg-background" edges={['top']}>
         <ErrorView message={toErrorMessage(error, '设备列表加载失败')} onRetry={() => refetch()} />
-      </SafeAreaView>
+      </Screen>
     );
   }
 
   const list = data?.list ?? [];
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <Screen className="flex-1 bg-background" edges={['top']}>
       <View className="w-full max-w-5xl flex-1 self-center px-5 pt-4">
         <View className="flex-row items-center justify-between">
           <Text className="text-xl font-bold text-text">设备</Text>
@@ -116,6 +115,6 @@ export default function Devices() {
           </View>
         ) : null}
       </View>
-    </SafeAreaView>
+    </Screen>
   );
 }

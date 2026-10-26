@@ -1,8 +1,7 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
-import { toast } from '@/components';
+import { Screen, toast } from '@/components';
 import { useLogout } from '@/features/auth/hooks';
 import { useUserStore } from '@/features/auth/store';
 import { getInstallId } from '@/lib/device-install-id';
@@ -40,7 +39,7 @@ export default function Profile() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <Screen className="flex-1 bg-background" edges={['top']}>
       <ScrollView contentContainerClassName="px-5 pb-10 pt-4">
         <View className="w-full max-w-5xl self-center">
           <Text className="text-xl font-bold text-text">我的</Text>
@@ -87,7 +86,7 @@ export default function Profile() {
           </Pressable>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
